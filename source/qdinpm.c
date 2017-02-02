@@ -4090,7 +4090,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
   int e3ch; */
   int e4ch;
   int e5ch;
-  char itemplate[256] = "Hello World!";
+  char itemplate[256];
   int itpos = 0;
   char theline[256] = "";
   int tlpos = 0;
@@ -4155,7 +4155,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
      case OK_PF2:
        /* ESC T, F2 - write 'til char */
        e5ch = qdgetch();
-       e5ch = qdinstrch(itemplate,e5ch,itpos);
+       e5ch = qdinstrch(itemplate,e5ch,itpos); /* This variable reuse will probably get me punched someday */
        if (e5ch>0)
        {
          e4ch=e5ch+itpos;
@@ -4327,7 +4327,7 @@ int keypause()
   printf("[Press a key to continue...]\n");
   tempi = getkeyn();
   printf("\033[1A");
-  printf("                                                \n");
+  printf("                               \n");
   printf("\033[1A");
   return 0;
 }
