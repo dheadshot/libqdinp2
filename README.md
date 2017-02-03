@@ -4,10 +4,12 @@
 
 ### About the Quick and Dirty Input Library:
 The Quick and Dirty Input Library began as part of "FREDLIN", a free version of "EDLIN" for Linux.  FREDLIN was written in 2015, based on ideas dreamt up in the time between 2010 and then, by DHeadshot.  In 2016, it was spun out as a separate project and now in 2017 made open-source.
+
 The library uses the original 86-DOS (AKA QDOS, the Quick and Dirty Operating System) "Template" system for input, albeit with different Ctrl actions (for Linux compatibility) and some additional customisation for the PC keyboard.
 
 #### The Functions:
 There are a number of functions available in the library.  This is a brief description of each of them.
+
 * setmodsasfuncs: Enables the "modsasfuncs" functionality.  This causes modifiers of function keys to be interpreted as additional function keys.
 * resetmodsasfuncs: Disables the "modsasfuncs" functionality.  This means that modifiers of function keys will be passed as the modifier code "ORed" with the function key code.
 * getterm: This should be called at the beginning of the program as it sets the internal variable to the identity of the user's terminal (or terminal emulator), so that the library will behave properly.
@@ -64,6 +66,9 @@ _Please note that since this was written, my C has improved immensely and thus t
 
 ### Credits:
 2015-17 DHSC, 2017-?? The Quick and Dirty Input Library Project
+
 This library is free open source code - use and distribute it as you like.  The only real requirement is that in the credits of your program you mention that the library was used and provide a link back to the github site.
+
 The "mygetch" routine was created by VvV and kermi3 on the CProgramming.com boards, so thanks to them for that.
+
 The library was inspired by the original 86-DOS templating system created by Tim Paterson of SCP.  None of his code or that of Microsoft has been used in this library though.
