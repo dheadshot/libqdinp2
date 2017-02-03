@@ -26,6 +26,7 @@ There are a number of functions available in the library.  This is a brief descr
 The library uses a "Template" system for input.  When using the library for the user to enter a command, the template is recommended to be the last command the user typed.  When using the library for a user to enter text, the template is recommended to be the original contents of the text.  As the user types, the current position in the template is advanced unless "Insert Mode" is on.
 
 The following key combinations work with the template:
+
 Key  Combination | Description
 ---------------- | -----------
 ESC S or F1 | This copies one character from the template to the current line.
