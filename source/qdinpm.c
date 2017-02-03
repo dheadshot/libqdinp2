@@ -4321,6 +4321,265 @@ ReturnPt:
 }
 
 
+int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int eofiscancel)
+{
+  /*
+  * targetstring is the target string
+  * templatestring is the template
+  * templatestring cannot be longer than the size allocated to targetstring
+  * The size in chars of targetstring must be specified in stringlen
+  * eofiscancel must be 1 or 0
+  *
+  * Returns  3 if Ctrl+C was used to cancel text entry, 
+  *          4 if Ctrl+D was used to exit text entry,
+  *         -1 if signal-handler registration failed, -2 if inputs are bad, 
+  *         -3 if out of memory, otherwise 0.
+  */
+  int ch;
+  /* int ech;
+  int eech;
+  int e3ch; */
+  int e4ch;
+  int e5ch;
+  char *itemplate;
+  int itpos = 0;
+  int tlpos = 0;
+  int insmode = 0;
+  int retcond = 0;
+  
+  if (stringlen <= strlen(templatestring) || stringlen < 2)
+  {
+    /* Output string length is too short! */
+    return -2;
+  }
+  itemplate = (char *) malloc(stringlen * sizeof(char));
+  if (itemplate == NULL) return -3; /* Out of Memory */
+  
+  targetstring[stringlen-1] = 0;
+  memset(itemplate,0,stringlen);
+  strcpy(itemplate, templatestring);
+  exitreadqdline = 0;
+  if (eofiscancel == 0)
+  {
+    if (regsiginthandler()==-1) return -1;
+  }
+  
+  while (exitreadqdline == 0)
+  {
+   ch=getkeyn();
+   switch (ch)
+   {
+     case OK_BLUE:
+       /* ESC P - INS On*/
+       insmode = 1;
+     break;
+     
+     case OK_RED:
+       /* ESC Q - INS Off */
+       insmode = 0;
+     break;
+     
+     case OK_ENL:
+     case OK_GREY:
+     case OK_F8:
+       /* ESC CR, ESC R, F8 */
+       memset(itemplate,0,stringlen);
+       strcpy(itemplate,targetstring);
+       memset(targetstring,0,stringlen);
+       strcpy(targetstring,"\x00");
+       tlpos=0;
+       itpos=0;
+       insmode = 0;
+       printf("@\n");
+     break;
+     
+     case OK_QF1:
+     case OK_F1:
+     case OK_PF1:
+       /* ESC S, F1 */
+       if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
+       if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
+       printf("%c",itemplate[itpos]);
+       if ((itemplate[itpos] != 0) && (tlpos < stringlen-1))
+       {
+         targetstring[tlpos] = itemplate[itpos];
+         tlpos++;
+       }
+       if ((itpos < stringlen-1) && (insmode == 0) && (itemplate[itpos] != 0)) itpos++;
+     break;
+     
+     case OK_QF2:
+     case OK_F2:
+     case OK_PF2:
+       /* ESC T, F2 - write 'til char */
+       e5ch = qdgetch();
+       e5ch = qdinstrch(itemplate,e5ch,itpos); /* This variable reuse will probably get me punched someday */
+       if (e5ch>0)
+       {
+         e4ch=e5ch+itpos;
+         while ((itpos < e4ch) && (itpos<stringlen-1))
+         {
+           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
+           if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
+           printf("%c",itemplate[itpos]);
+           if ((itemplate[itpos] != 0) && (tlpos < stringlen-1))
+           {
+             targetstring[tlpos] = itemplate[itpos];
+             tlpos++;
+           }
+           itpos++;
+         }
+         if (insmode != 0) itpos = e4ch - e5ch;
+       }
+     break;
+     
+     case OK_QF3:
+     case OK_F3:
+     case OK_PF3:
+       /* ESC U, F3 */
+       if ((itpos<stringlen) && (itemplate[itpos] != 0))
+       {
+         e5ch=itpos;
+         while ((itpos < stringlen) && (itemplate[itpos] !=0) && (tlpos < stringlen))
+         {
+           targetstring[tlpos]=itemplate[itpos];
+           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
+           if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
+           printf("%c",itemplate[itpos]);
+           tlpos++;
+           itpos++;
+         }
+         if (insmode != 0) itpos = e5ch;
+       }
+     break;
+     
+     case OK_QF4:
+     case OK_F4:
+     case OK_PF4:
+       /* ESC V, F4 */
+       if (itpos < stringlen-1) itpos++;
+     break;
+     
+     case OK_QF5:
+     case OK_F5:
+       /* ESC W, F5 */
+       e5ch = qdgetch();
+       e5ch = qdinstrch(itemplate,e5ch,itpos);
+       if (e5ch>0)
+       {
+         itpos+=e5ch;
+       }
+     break;
+     
+     case OK_DEL:
+     case OK_NDEL:
+     case 8:
+     case 127:
+       /* DEL (NumDEL = ESC On) */
+       if (tlpos>0)
+       {
+         termbsn(1);
+         tlpos--;
+         if ((targetstring[tlpos]==12) || (targetstring[tlpos]==4)) termbsn(1);
+         targetstring[tlpos]=0;
+       }
+       if ((itpos > 0) && (insmode == 0)) itpos--;
+     break;
+     
+     case OK_INS:
+     case OK_N0:
+       /* INS (NumINS = ESC Op) */
+       if (insmode == 0) { insmode = 1; } else { insmode = 0; }
+     break;
+     
+     case 12:
+       /* ^L */
+       printf("\033[7mL\033[27m");
+       targetstring[tlpos]=12;
+       tlpos++;
+       if ((itpos < stringlen-1) && (insmode == 0)) itpos++;
+     break;
+     
+     case 24:
+       /* ^X */
+       printf("\\\n");
+       tlpos=0;
+       strcpy(targetstring,"\x00");
+     break;
+     
+     case OK_NENTER:
+       ch = 10;
+     case 13:
+     case 10:
+       /* CRLF */
+       if (tlpos < stringlen-1)
+        {
+          printf("\n");
+          targetstring[tlpos]=ch;
+          tlpos++;
+          targetstring[tlpos]=0;
+          goto ReturnPt;
+        }
+     break;
+     
+     case 25:
+       /* ^Y */
+       targetstring[tlpos]=0;
+       goto ReturnPt;
+     break;
+            
+     case 9:
+     case 11:
+     case OK_NHT:
+       /* Tabs */
+       if (tlpos < stringlen-1)
+       {
+         printf("%c",9);
+         if ((itpos < stringlen-1) && (insmode == 0)) itpos++;
+         targetstring[tlpos]=9;
+         tlpos++;
+       }
+     break;
+            
+     case 4:
+       /* ^D = Cancel Mode or EOF */
+       if (eofiscancel != 0)
+       {
+         tlpos=0;
+         memset(targetstring,0,stringlen);
+         strcpy(targetstring,"\x04\x00");
+         goto ReturnPt;
+       }
+       else
+       {
+         printf("\033[7mD\033[27m");
+         targetstring[tlpos]=12;
+         tlpos++;
+         if ((itpos < stringlen-1) && (insmode == 0)) itpos++;
+       }
+     break;
+            
+     default:
+       if ((tlpos < stringlen-1) && (ch<256) && (ch >= 32))
+       {
+         printf("%c",ch);
+         if ((itpos < stringlen-1) && (insmode == 0)) itpos++;
+         targetstring[tlpos]=ch;
+         tlpos++;
+       }
+     break;
+   }
+  }
+  retcond = 3;
+ReturnPt:
+  if (eofiscancel == 0) deregsiginthandler();
+  else if (targetstring[0] == 4) return 4;
+  return retcond;
+}
+
+
+
+
 int keypause()
 {
   int tempi=0;
