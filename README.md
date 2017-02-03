@@ -67,7 +67,7 @@ _Please note that since this was written, my C has improved immensely and thus t
 ### Credits:
 2015-17 DHSC, 2017-?? The Quick and Dirty Input Library Project
 
-This library is free open source code - use and distribute it as you like.  The only real requirement is that in the credits of your program you mention that the library was used and provide a link back to the github site.
+This library is free open source code - use and distribute it as you like.  The only real requirement is that in the credits of your program you mention that the library was used and provide a link back to [the github site](https://github.com/dheadshot/libqdinp2).
 
 The "mygetch" routine was created by VvV and kermi3 on the CProgramming.com boards, so thanks to them for that.
 
