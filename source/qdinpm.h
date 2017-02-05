@@ -160,6 +160,7 @@
 /* For compatibility with the original library, define a macro for 
    readline() as readqdline() */
 
+char *qdinpver();
 void setmodsasfuncs();
 void resetmodsasfuncs();
 int getterm();

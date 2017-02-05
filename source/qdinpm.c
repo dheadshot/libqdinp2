@@ -175,6 +175,12 @@ int modsasfuncs = 0; /* Interpret function key modifiers as additional function 
 int exitreadqdline = 0; /* Exit the readqdline function? */
 
 
+char *qdinpver()
+{
+  /* Returns the Library version number */
+  return qdinplibver;
+}
+
 void setmodsasfuncs()
 {
   modsasfuncs = 1;
@@ -566,6 +572,7 @@ XTSS3:
                 return OK_F4;
               break;
 
+/* I really ought to get rid of this commented out code, but I don't have the heart... */
 /*              case 80:
 XTF1:
                 /* F1 = ESC OP *
@@ -2076,10 +2083,7 @@ XTCSI:
                   break;
                   
                   default:
-                    /* ESC [1 */
-                    /* printf("%c",ech);
-                    printf("%c",eech);
-                    printf("%c",e3ch); */
+                    /* ESC [1 UNKNOWN */
                     return OK_UNK_4;
                   break;
                 }
@@ -3206,10 +3210,7 @@ XTIns:
                   break;
                   
                   default:
-                    /* ESC [2 */
-                    /* printf("%c",ech);
-                    printf("%c",eech);
-                    printf("%c",e3ch); */
+                    /* ESC [2 UNKNOWN */
                     return OK_UNK_4;
                   break;
                 }
@@ -3773,10 +3774,7 @@ XTDel:
                   break;
                   
                   default:
-                    /* ESC [3 */
-                    /* printf("%c",ech);
-                    printf("%c",eech);
-                    printf("%c",e3ch); */
+                    /* ESC [3 UNKNOWN */
                     return OK_UNK_4;
                   break;
                 }
@@ -3897,9 +3895,7 @@ XTDel:
               break;
               
               default:
-                /* ESC [ */
-                /* printf("%c",ech);
-                printf("%c",eech); */
+                /* ESC [ UNKNOWN */
                 return OK_UNK_3;
               break;
             }
@@ -3980,8 +3976,7 @@ XTAPC:
           break;
           
           default:
-            /* ESC */
-            /* printf("%c",ech); */
+            /* ESC UNKNOWN */
             return OK_UNK_2;
           break;
         }
@@ -4085,9 +4080,6 @@ XTAPC:
 int readqdline(char *targetstring, char *templatestring, int eofiscancel)
 {
   int ch;
-  /* int ech;
-  int eech;
-  int e3ch; */
   int e4ch;
   int e5ch;
   char itemplate[256];
@@ -4289,7 +4281,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
        {
          tlpos=0;
          memset(theline,0,256);
-         strcpy(theline,"\x04\x00");
+         strcpy(theline,"\x04\x00"); /* Old way of signalling cancellation */
          goto ReturnPt;
        }
        else
@@ -4336,9 +4328,6 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
   *         -3 if out of memory, otherwise 0.
   */
   int ch;
-  /* int ech;
-  int eech;
-  int e3ch; */
   int e4ch;
   int e5ch;
   char *itemplate;
@@ -4551,7 +4540,7 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
        {
          tlpos=0;
          memset(targetstring,0,stringlen);
-         strcpy(targetstring,"\x04\x00");
+         strcpy(targetstring,"\x04\x00"); /* Old way of signalling cancellation */
          goto ReturnPt;
        }
        else

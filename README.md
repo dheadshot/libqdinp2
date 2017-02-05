@@ -10,6 +10,7 @@ The library uses the original 86-DOS (AKA QDOS, the Quick and Dirty Operating Sy
 #### The Functions:
 There are a number of functions available in the library.  This is a brief description of each of them.
 
+* qdinpver: Returns the library version number as a string.
 * setmodsasfuncs: Enables the "modsasfuncs" functionality.  This causes modifiers of function keys to be interpreted as additional function keys.
 * resetmodsasfuncs: Disables the "modsasfuncs" functionality.  This means that modifiers of function keys will be passed as the modifier code "ORed" with the function key code.
 * getterm: This should be called at the beginning of the program as it sets the internal variable to the identity of the user's terminal (or terminal emulator), so that the library will behave properly.
