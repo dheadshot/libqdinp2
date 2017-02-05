@@ -4361,7 +4361,11 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
   exitreadqdline = 0;
   if (eofiscancel == 0)
   {
-    if (regsiginthandler()==-1) return -1;
+    if (regsiginthandler()==-1)
+    {
+      free(itemplate);
+      return -1;
+    }
   }
   
   while (exitreadqdline == 0)
@@ -4572,6 +4576,7 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
   }
   retcond = 3;
 ReturnPt:
+  free(itemplate);
   if (eofiscancel == 0) deregsiginthandler();
   else if (targetstring[0] == 4) return 4;
   return retcond;

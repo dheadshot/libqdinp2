@@ -171,6 +171,7 @@ int qdinstrch(char *targstring, char findchar, int startoffset);
 int firstletter(char *cmdstring);
 int getkeyn();
 int readqdline(char *targetstring, char *templatestring, int eofiscancel);
+int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int eofiscancel);
 int keypause();
 int yesnomsg(char *amsg);
 
