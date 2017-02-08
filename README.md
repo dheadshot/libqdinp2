@@ -41,7 +41,7 @@ ESC W or F5 | This must be followed by a character.  It skips over all character
 ESC P | This turns on "Insert Mode".  In this mode, as characters are typed to the line, the current position in the template does not advance.
 ESC Q | This turns off "Insert Mode".  Outside of this mode, the position in the template is advanced for each character typed to the line.  This is the default mode.
 INS | This toggles "Insert Mode" on and off.  By default, it is off.
-ESC R or F8 | This changes the template to be the current line.  The current line as typed into the buffer is cleared and "Insert Mode" is turned off.  On the screen, an At sign ("@") is written followed by a new line.  This does not affect the string provided to the function as the library maintains an internal template string.
+ESC R or F8 or ESC Return | This changes the template to be the current line.  The current line as typed into the buffer is cleared and "Insert Mode" is turned off.  On the screen, an At sign ("@") is written followed by a new line.  This does not affect the string provided to the function as the library maintains an internal template string.
 
 The entered text ends with a new line keypress, the new line character (LF) being included in the text that is assigned to the target string.  The maximum length of inputted text is 255 characters, however a user can make text "wrap" to a new line if the programmer provides another call to the readqdline function.  To do this, the user must end the inputted text with a CTRL+Y.  This submits the text without the new line character appended to the end.
 
