@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef COHERENT /* For compatibility with Coherent and other older *NIXes, define COHERENT! */
+#include <termio.h>
+#else
 #include <termios.h>
+#endif
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
@@ -40,7 +44,7 @@ OK_SLOCK 	256+23		Scroll Lock
 OK_PAUSE 	256+24		Pause/Break
 OK_BS 		256+25		Backspace
 OK_INS 		256+26		Insert
-OK_HOME 	256+27
+OK_HOME 	256+27		Home
 OK_PGUP 	256+28		Page Up
 OK_NLOCK 	256+29		Num Lock
 OK_NDIV 	256+30		Numpad /
@@ -49,7 +53,7 @@ OK_NSUB 	256+32		Numpad -
 OK_HT 		256+33		Tab
 OK_RHT 		256+34		Reverse Tab (?)
 OK_DEL 		256+35		Delete
-OK_END 		256+36
+OK_END 		256+36		End
 OK_PGDOWN 	256+37		Page Down
 OK_NADD 	256+38		Numpad +
 OK_CLOCK 	256+39		Caps Lock
@@ -65,10 +69,10 @@ OK_N6 		256+48		Numpad 6
 OK_N7 		256+49		Numpad 7
 OK_N8 		256+50		Numpad 8
 OK_N9 		256+51		Numpad 9
-OK_UP 		256+52
-OK_LEFT 	256+53
-OK_DOWN 	256+54
-OK_RIGHT 	256+55
+OK_UP 		256+52		Up
+OK_LEFT 	256+53		Left
+OK_DOWN 	256+54		Down
+OK_RIGHT 	256+55		Right
 OK_NSP 		256+56		Numpad Space
 OK_NHT 		256+57		Numpad Tab
 OK_PF1 		256+58		P Function Keys...
@@ -168,7 +172,11 @@ OK_UNK_8 	-8		Unknown 8 Key Sequence
 */
 
 
+#ifdef COHERENT
+char qdinplibver[] = "0.02.00C";
+#else
 char qdinplibver[] = "0.02.00";
+#endif
 
 char termtype[256] = "";
 int modsasfuncs = 0; /* Interpret function key modifiers as additional function keys? */
@@ -213,6 +221,17 @@ int getterm()
 
 int qdgetch()
 {
+#ifdef COHERENT
+  struct termio oldt, newt;
+  int ch;
+  
+  ioctl(STDIN_FILENO, TCGETA, &oldt);  /*tcgetattr equivalent*/
+  newt = oldt;
+  newt.c_lflag &= ~( ICANON | ECHO );
+  ioctl(STDIN_FILENO, TCSETA, &newt); /*tcsetattr TCSANOW equivalent*/
+  ch = getchar();
+  ioclt(STDIN_FILENO, TCSETA, &oldt); /*tcsetattr TCSANOW equivalent*/
+#else
   struct termios oldt, newt;
   int ch;
   
@@ -222,6 +241,7 @@ int qdgetch()
   tcsetattr(STDIN_FILENO, TCSANOW, &newt);
   ch = getchar();
   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+#endif
   return ch;
 }
 
@@ -365,6 +385,9 @@ int getkeyn()
           break;
 
           case '7':
+            if ((strcmp(termtype, "ansipc")==0) || 
+                (strcmp(termtype, "ANSIPC")==0))
+              return OK_N5;
             return OK_N7;
           break;
 
@@ -430,7 +453,9 @@ XTRI:
           
           case 'N':
             /* ECN */
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_ECN;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_ECN;
 XTSS2:
             /* SS2 */
             return OK_SS2;
@@ -712,36 +737,53 @@ XTNIns:
             }
           break;
           
+          
           case (64+16):
-            if ((strcmp(termtype,"vt52")==0) || (strcmp(termtype,"VT52")==0)) return OK_PF1;
+            if ((strcmp(termtype,"vt52")==0) || 
+                (strcmp(termtype,"VT52")==0)) 
+              return OK_PF1;
             /* ECP */
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_ECP;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_ECP;
             /* DCS */
-            if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) return OK_DCS;
+            if ((memcmp(termtype,"vt",2)==0) || 
+                (memcmp(termtype,"VT",2)==0)) 
+              return OK_DCS;
           case (96+16):
             /* ESC P - INS On*/
             return OK_BLUE;
           break;
           
           case (64+17):
-            if ((strcmp(termtype,"vt52")==0) || (strcmp(termtype,"VT52")==0)) return OK_PF2;
+            if ((strcmp(termtype,"vt52")==0) || 
+                (strcmp(termtype,"VT52")==0)) 
+              return OK_PF2;
           case (96+17):
             /* ESC Q - INS Off */
             return OK_RED;
           break;
           
           case (64+18):
-            if ((strcmp(termtype,"vt52")==0) || (strcmp(termtype,"VT52")==0)) return OK_PF3;
+            if ((strcmp(termtype,"vt52")==0) || 
+                (strcmp(termtype,"VT52")==0)) 
+              return OK_PF3;
             /* ECR */
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_ECR;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_ECR;
           case (96+18):
             /* ESC R */
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_EHR;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_EHR;
             return OK_GREY;
           break;
           
           case (64+19):
-            if ((strcmp(termtype,"vt52")==0) || (strcmp(termtype,"VT52")==0)) return OK_PF4;
+            if ((strcmp(termtype,"vt52")==0) || 
+                (strcmp(termtype,"VT52")==0)) 
+              return OK_PF4;
           case (96+19):
             /* ESC S */
             return OK_QF1;
@@ -749,14 +791,18 @@ XTNIns:
           
           case (64+20):
             /* ECT */
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_ECT;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_ECT;
           case (96+20):
             /* ESC T - write 'til char */
             return OK_QF2;
           break;
           
           case (96+21):
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_EHU;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_EHU;
           case (64+21):
             /* ESC U */
             return OK_QF3;
@@ -764,18 +810,26 @@ XTNIns:
           
           case (64+22):
             /* ECV */
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_ECV;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_ECV;
             /* SPA */
-            if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) return OK_SPA;
+            if ((memcmp(termtype,"vt",2)==0) || 
+                (memcmp(termtype,"VT",2)==0)) 
+              return OK_SPA;
           case (96+22):
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_EHV;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_EHV;
             /* ESC V */
             return OK_QF4;
           break;
           
           case (64+23):
             /* EPA */
-            if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) return OK_EPA;
+            if ((memcmp(termtype,"vt",2)==0) || 
+                (memcmp(termtype,"VT",2)==0)) 
+              return OK_EPA;
           case (96+23):
             /* ESC W */
             return OK_QF5;
@@ -868,43 +922,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F0 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F0 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F0 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F0 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F0 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F0 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F0 | OK_META | OK_CTRL);
+                                if (e7ch==126) return 
+                                  (OK_F0 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F0 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F0 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F0 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126)
+                                  return (OK_F0 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F0 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F0 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -950,7 +1012,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F0 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F0 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1003,43 +1066,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F1 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F1 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F1 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F1 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F1 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F1 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F1 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F1 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F1 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F1 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F1 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F1 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F1 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F1 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -1088,7 +1159,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F1 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F1 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1141,43 +1213,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F2 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F2 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F2 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F2 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F2 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F2 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F2 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F2 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F2 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F2 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F2 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F2 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F2 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F2 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -1226,7 +1306,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F2 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F2 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1279,43 +1360,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F3 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F3 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F3 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F3 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F3 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F3 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F3 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F3 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F3 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F3 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F3 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F3 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F3 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F3 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -1364,7 +1453,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F3 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F3 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1417,43 +1507,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F4 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F4 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F4 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F4 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F4 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F4 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F4 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F4 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F4 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F4 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F4 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F4 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F4 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F4 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -1502,7 +1600,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F4 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F4 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1555,43 +1654,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F5 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F5 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F5 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F5 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F5 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F5 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F5 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F5 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F5 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F5 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F5 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F5 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F5 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F5 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -1640,7 +1747,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F5 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F5 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1693,43 +1801,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F6 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F6 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F6 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F6 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F6 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F6 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F6 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F6 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F6 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F6 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F6 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F6 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F6 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F6 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -1778,7 +1894,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F6 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F6 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1832,43 +1949,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F7 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F7 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F7 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F7 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F7 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F7 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F7 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F7 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F7 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F7 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F7 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F7 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F7 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F7 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -1917,7 +2042,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F7 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F7 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -1970,43 +2096,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F8 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F8 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F8 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F8 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F8 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F8 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F8 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F8 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F8 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F8 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F8 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F8 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F8 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F8 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -2055,7 +2189,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F8 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F8 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -2078,8 +2213,13 @@ XTCSI:
                   break;
                   
                   case '~':
-                    if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0) || (strcmp(termtype,"vt102")==0) || (strcmp(termtype,"VT102")==0)) return OK_FIND;
-                    else return OK_HOME;
+                    if ((strcmp(termtype,"vt100")==0) || 
+                        (strcmp(termtype,"VT100")==0) || 
+                        (strcmp(termtype,"vt102")==0) || 
+                        (strcmp(termtype,"VT102")==0)) 
+                      return OK_FIND;
+                    else 
+                      return OK_HOME;
                   break;
                   
                   default:
@@ -2125,43 +2265,51 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F9 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F9 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F9 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F9 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F9 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F9 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F9 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F9 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F9 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F9 | OK_META | OK_SHIFT | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F9 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F9 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F9 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F9 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -2210,7 +2358,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F9 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F9 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -2263,43 +2412,52 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F10 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F10 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F10 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F10 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F10 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F10 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F10 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F10 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F10 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F10 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F10 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F10 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F10 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F10 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -2348,7 +2506,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F10 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F10 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -2409,43 +2568,52 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F11 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F11 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F11 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F11 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F11 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F11 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F11 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F11 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F11 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F11 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F11 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F11 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F11 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F11 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -2494,7 +2662,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F11 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F11 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -2555,43 +2724,52 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F12 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F12 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F12 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F12 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F12 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F12 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F12 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F12 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F12 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F12 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F12 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F12 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F12 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F12 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -2640,7 +2818,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F12 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F12 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -2693,43 +2872,52 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F13 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F13 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F13 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F13 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F13 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F13 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F13 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F13 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F13 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F13 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F13 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F13 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F13 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F13 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -2775,7 +2963,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F13 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F13 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -2828,43 +3017,52 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F14 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F14 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F14 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F14 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F14 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F14 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F14 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F14 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F14 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F14 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F14 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F14 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F14 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F14 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -2910,7 +3108,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F14 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F14 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -2938,8 +3137,13 @@ XTCSI:
                     switch (e4ch)
                     {
                       case '~':
-                        if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0) || (strcmp(termtype,"vt102")==0) || (strcmp(termtype,"VT102")==0)) return OK_HELP;
-                        else return OK_F15;
+                        if ((strcmp(termtype,"vt100")==0) || 
+                            (strcmp(termtype,"VT100")==0) || 
+                            (strcmp(termtype,"vt102")==0) || 
+                            (strcmp(termtype,"VT102")==0)) 
+                          return OK_HELP;
+                        else 
+                          return OK_F15;
                       break;
                       
                       case '^':
@@ -2964,43 +3168,52 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F15 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F15 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F15 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F15 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F15 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F15 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F15 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F15 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F15 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F15 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F15 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F15 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F15 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F15 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -3046,7 +3259,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F15 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F15 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -3099,43 +3313,52 @@ XTCSI:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F16 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F16 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F16 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F16 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F16 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F16 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F16 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F16 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F16 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F16 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F16 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F16 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F16 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F16 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -3181,7 +3404,8 @@ XTCSI:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F16 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F16 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -3252,43 +3476,52 @@ XTIns:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F17 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F17 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F17 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F17 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F17 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F17 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F17 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F17 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F17 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F17 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F17 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F17 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F17 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F17 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -3334,7 +3567,8 @@ XTIns:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F17 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F17 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -3387,43 +3621,52 @@ XTIns:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F18 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F18 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F18 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F18 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F18 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F18 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F18 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F18 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F18 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F18 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F18 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F18 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F18 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F18 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -3471,7 +3714,8 @@ XTIns:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F18 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F18 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -3524,43 +3768,52 @@ XTIns:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F19 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F19 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F19 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F19 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F19 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F19 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F19 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F19 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F19 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F19 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F19 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F19 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F19 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F19 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -3608,7 +3861,8 @@ XTIns:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F19 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F19 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -3661,43 +3915,52 @@ XTIns:
                               
                               case '0':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F20 | OK_META | OK_SHIFT);
+                                if (e7ch==126) 
+                                  return (OK_F20 | OK_META | OK_SHIFT);
                                 return OK_UNK_8;
                               break;
                               
                               case '1':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F20 | OK_META | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F20 | OK_META | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '2':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F20 | OK_META | OK_SHIFT | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F20 | OK_META | OK_SHIFT | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '3':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F20 | OK_META | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F20 | OK_META | OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '4':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F20 | OK_META | OK_SHIFT | OK_CTRL);
+                                if (e7ch==126) 
+                                  return (OK_F20 | OK_META | OK_SHIFT | 
+                                          OK_CTRL);
                                 return OK_UNK_8;
                               break;
                               
                               case '5':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F20 | OK_META | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F20 | OK_META | OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
                               case '6':
                                 e7ch = qdgetch();
-                                if (e7ch==126) return (OK_F20 | OK_META | OK_SHIFT | OK_CTRL | OK_ALT);
+                                if (e7ch==126) 
+                                  return (OK_F20 | OK_META | OK_SHIFT | 
+                                          OK_CTRL | OK_ALT);
                                 return OK_UNK_8;
                               break;
                               
@@ -3745,7 +4008,8 @@ XTIns:
                           
                           case '8':
                             e6ch = qdgetch();
-                            if (e6ch==126) return (OK_F20 | OK_SHIFT | OK_ALT | OK_CTRL);
+                            if (e6ch==126) 
+                              return (OK_F20 | OK_SHIFT | OK_ALT | OK_CTRL);
                             return OK_UNK_7;
                           break;
                           
@@ -3786,8 +4050,13 @@ XTDel:
                 switch (e3ch)
                 {
                   case '~':
-                    if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0) || (strcmp(termtype,"vt102")==0) || (strcmp(termtype,"VT102")==0)) return OK_SELECT;
-                    else return OK_END;
+                    if ((strcmp(termtype,"vt100")==0) || 
+                        (strcmp(termtype,"VT100")==0) || 
+                        (strcmp(termtype,"vt102")==0) || 
+                        (strcmp(termtype,"VT102")==0)) 
+                      return OK_SELECT;
+                    else 
+                      return OK_END;
                   break;
                   
                   default:
@@ -3802,8 +4071,13 @@ XTDel:
                 switch (e3ch)
                 {
                   case '~':
-                    if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0) || (strcmp(termtype,"vt102")==0) || (strcmp(termtype,"VT102")==0)) return OK_RHT;
-                    else return OK_PGUP;
+                    if ((strcmp(termtype,"vt100")==0) || 
+                        (strcmp(termtype,"VT100")==0) || 
+                        (strcmp(termtype,"vt102")==0) || 
+                        (strcmp(termtype,"VT102")==0)) 
+                      return OK_RHT;
+                    else 
+                      return OK_PGUP;
                   break;
                   
                   default:
@@ -3818,8 +4092,13 @@ XTDel:
                 switch (e3ch)
                 {
                   case '~':
-                    if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0) || (strcmp(termtype,"vt102")==0) || (strcmp(termtype,"VT102")==0)) return OK_CLEAR;
-                    else return OK_PGDOWN;
+                    if ((strcmp(termtype,"vt100")==0) || 
+                        (strcmp(termtype,"VT100")==0) || 
+                        (strcmp(termtype,"vt102")==0) || 
+                        (strcmp(termtype,"VT102")==0)) 
+                      return OK_CLEAR;
+                    else 
+                      return OK_PGDOWN;
                   break;
                   
                   default:
@@ -3853,6 +4132,9 @@ XTDel:
               break;
               
               case 'G':
+                if ((strcmp(termtype, "ansipc")==0) ||
+                    (strcmp(termtype, "ANSIPC")==0))
+                  return OK_PGDOWN;
                 return OK_N5;
               break;
               
@@ -3860,9 +4142,158 @@ XTDel:
                 return OK_HOME;
               break;
               
+              case 'I':
+                return OK_PGUP;
+              break;
+              
+              case 'L':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_INS;
+                return OK_UNK_3;
+              break;
+              
+              case 'M':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F1;
+                return OK_UNK_3;
+              break;
+              
+              case 'N':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F2;
+                return OK_UNK_3;
+              break;
+              
+              case 'O':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F3;
+                return OK_UNK_3;
+              break;
+              
               case 'P':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F4;
                 return OK_PAUSE;
               break;
+              
+              case 'Q':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F5;
+                return OK_UNK_3;
+              break;
+              
+              case 'R':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F6;
+                return OK_UNK_3;
+              break;
+              
+              case 'S':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F7;
+                return OK_UNK_3;
+              break;
+              
+              case 'T':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F8;
+                return OK_UNK_3;
+              break;
+              
+              case 'U':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F9;
+                return OK_UNK_3;
+              break;
+              
+              case 'V':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return OK_F10;
+                return OK_UNK_3;
+              break;
+              
+              case 'Y':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F1);
+                return OK_UNK_3;
+              break;
+              
+              case 'Z':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F2);
+                return OK_UNK_3;
+              break;
+              
+              case 'a':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F3);
+                return OK_UNK_3;
+              break;
+              
+              case 'b':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F4);
+                return OK_UNK_3;
+              break;
+              
+              case 'c':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F5);
+                return OK_UNK_3;
+              break;
+              
+              case 'd':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F6);
+                return OK_UNK_3;
+              break;
+              
+              case 'e':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F7);
+                return OK_UNK_3;
+              break;
+              
+              case 'f':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F8);
+                return OK_UNK_3;
+              break;
+              
+              case 'g':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F9);
+                return OK_UNK_3;
+              break;
+              
+              case 'h':
+                if ((strcmp(termtype, "ansipc") == 0) ||
+                    (strcmp(termtype, "ANSIPC") == 0))
+                  return (OK_SHIFT | OK_F10);
+                return OK_UNK_3;
+              break;
+              
+              
               
               case '[':
                 e3ch = qdgetch();
@@ -3933,7 +4364,9 @@ XTOSC:
           break;
           
           case '^':
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0))  return OK_F9;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0))  
+              return OK_F9;
 XTPM:
             /* PM */
             return OK_PM;
@@ -3965,7 +4398,9 @@ XTPM:
           
           case '_':
             /* VT100 F18 ONLY! */
-            if ((strcmp(termtype,"vt100")==0) || (strcmp(termtype,"VT100")==0)) return OK_F18;
+            if ((strcmp(termtype,"vt100")==0) || 
+                (strcmp(termtype,"VT100")==0)) 
+              return OK_F18;
 XTAPC:
             /* APC */
             return OK_APC;
@@ -3985,17 +4420,21 @@ XTAPC:
       {
         if (ch == 0x90)
         {
-          if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) return OK_DCS;
+          if ((memcmp(termtype,"vt",2)==0) || 
+              (memcmp(termtype,"VT",2)==0)) 
+            return OK_DCS;
           return ch;
         }
         else if (ch == 0x96)
         {
-          if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) return OK_SPA;
+          if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) 
+            return OK_SPA;
           return ch;
         }
         else if (ch == 0x97)
         {
-          if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) return OK_EPA;
+          if ((memcmp(termtype,"vt",2)==0) || (memcmp(termtype,"VT",2)==0)) 
+            return OK_EPA;
           return ch;
         }
         else if (ch == 0x98)
@@ -4120,7 +4559,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
        memset(itemplate,0,256);
        strcpy(itemplate,theline);
        memset(theline,0,256);
-       strcpy(theline,"\0");
+       strcpy(theline,"\0");  /* I don't think we even need this line! */
        tlpos=0;
        itpos=0;
        insmode = 0;
@@ -4131,9 +4570,9 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
      case OK_F1:
      case OK_PF1:
        /* ESC S, F1 */
-       if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
-       if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
-       printf("%c",itemplate[itpos]);
+       if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); 
+       else if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); 
+       else  printf("%c",itemplate[itpos]);
        if ((itemplate[itpos] != 0) && (tlpos < 255))
        {
          theline[tlpos] = itemplate[itpos];
@@ -4153,9 +4592,9 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
          e4ch=e5ch+itpos;
          while ((itpos < e4ch) && (itpos<255))
          {
-           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
-           if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
-           printf("%c",itemplate[itpos]);
+           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); 
+           else if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); 
+           else printf("%c",itemplate[itpos]);
            if ((itemplate[itpos] != 0) && (tlpos < 255))
            {
              theline[tlpos] = itemplate[itpos];
@@ -4177,9 +4616,9 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
          while ((itpos < 255) && (itemplate[itpos] !=0) && (tlpos < 255))
          {
            theline[tlpos]=itemplate[itpos];
-           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
-           if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
-           printf("%c",itemplate[itpos]);
+           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); 
+           else if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); 
+           else printf("%c",itemplate[itpos]);
            tlpos++;
            itpos++;
          }
@@ -4198,7 +4637,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
      case OK_F5:
        /* ESC W, F5 */
        e5ch = qdgetch();
-       e5ch = qdinstrch(itemplate,e5ch,itpos);
+       e5ch = qdinstrch(itemplate,e5ch,itpos); 
        if (e5ch>0)
        {
          itpos+=e5ch;
@@ -4379,7 +4818,7 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
        memset(itemplate,0,stringlen);
        strcpy(itemplate,targetstring);
        memset(targetstring,0,stringlen);
-       strcpy(targetstring,"\x00");
+       strcpy(targetstring,"\x00");  /* Is this line necessary? */
        tlpos=0;
        itpos=0;
        insmode = 0;
@@ -4390,9 +4829,9 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
      case OK_F1:
      case OK_PF1:
        /* ESC S, F1 */
-       if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
-       if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
-       printf("%c",itemplate[itpos]);
+       if (itemplate[itpos]==12) printf("\033[7mL\033[27m");
+       else if (itemplate[itpos]==4) printf("\033[7mD\033[27m");
+       else  printf("%c",itemplate[itpos]);
        if ((itemplate[itpos] != 0) && (tlpos < stringlen-1))
        {
          targetstring[tlpos] = itemplate[itpos];
@@ -4412,9 +4851,9 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
          e4ch=e5ch+itpos;
          while ((itpos < e4ch) && (itpos<stringlen-1))
          {
-           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
-           if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
-           printf("%c",itemplate[itpos]);
+           if (itemplate[itpos]==12) printf("\033[7mL\033[27m");
+           else if (itemplate[itpos]==4) printf("\033[7mD\033[27m");
+           else  printf("%c",itemplate[itpos]);
            if ((itemplate[itpos] != 0) && (tlpos < stringlen-1))
            {
              targetstring[tlpos] = itemplate[itpos];
@@ -4436,9 +4875,9 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
          while ((itpos < stringlen) && (itemplate[itpos] !=0) && (tlpos < stringlen))
          {
            targetstring[tlpos]=itemplate[itpos];
-           if (itemplate[itpos]==12) printf("\033[7mL\033[27m"); else
-           if (itemplate[itpos]==4) printf("\033[7mD\033[27m"); else
-           printf("%c",itemplate[itpos]);
+           if (itemplate[itpos]==12) printf("\033[7mL\033[27m");
+           else if (itemplate[itpos]==4) printf("\033[7mD\033[27m");
+           else printf("%c",itemplate[itpos]);
            tlpos++;
            itpos++;
          }
