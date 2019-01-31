@@ -173,15 +173,15 @@ OK_UNK_8 	-8		Unknown 8 Key Sequence
 
 
 #ifdef COHERENT
-char qdinplibver[] = "0.02.00C";
+char qdinplibver[] = "0.02.02C";
 #else
-char qdinplibver[] = "0.02.00";
+char qdinplibver[] = "0.02.02";
 #endif
 
 char termtype[256] = "";
 int modsasfuncs = 0; /* Interpret function key modifiers as additional function keys? */
 int exitreadqdline = 0; /* Exit the readqdline function? */
-
+int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll.  */
 
 char *qdinpver()
 {
@@ -221,28 +221,86 @@ int getterm()
 
 int qdgetch()
 {
+  int ch;
+  
 #ifdef COHERENT
   struct termio oldt, newt;
-  int ch;
-  
   ioctl(STDIN_FILENO, TCGETA, &oldt);  /*tcgetattr equivalent*/
-  newt = oldt;
-  newt.c_lflag &= ~( ICANON | ECHO );
-  ioctl(STDIN_FILENO, TCSETA, &newt); /*tcsetattr TCSANOW equivalent*/
-  ch = getchar();
-  ioclt(STDIN_FILENO, TCSETA, &oldt); /*tcsetattr TCSANOW equivalent*/
 #else
   struct termios oldt, newt;
-  int ch;
-  
   tcgetattr(STDIN_FILENO, &oldt);
+#endif
   newt = oldt;
   newt.c_lflag &= ~( ICANON | ECHO );
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  ch = getchar();
+/*  newt.c_iflag &= ~(IGNBRK | BRKINT ); /* Return NULL on Ctrl+C */
+  newt.c_iflag &= ~(IGNBRK  );
+  newt.c_iflag |=  (BRKINT ); /* Return SIGINT on Ctrl+C */
+  switch (qdgetchmode)
+  {
+    case 0:
+      newt.c_cc[VMIN] = oldt.c_cc[VMIN];
+      newt.c_cc[VTIME] = oldt.c_cc[VTIME];
+#ifdef COHERENT
+      ioctl(STDIN_FILENO, TCSETA, &newt); /*tcsetattr TCSANOW equivalent*/
+#else
+      tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+#endif
+      ch = getchar();
+    break;
+    
+    case 1:
+      /*  printf("-");*/
+      newt.c_cc[VMIN] = 0;
+      newt.c_cc[VTIME] = 1;
+#ifdef COHERENT
+      ioctl(STDIN_FILENO, TCSETA, &newt); /*tcsetattr TCSANOW equivalent*/
+#else
+      tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+#endif
+      do
+      {
+        ch = getchar();
+      } while (ch==0 && exitreadqdline==0);
+      if (ch==0 && exitreadqdline != 0) ch = 3;
+    break;
+  }
+#ifdef COHERENT
+  ioclt(STDIN_FILENO, TCSETA, &oldt); /*tcsetattr TCSANOW equivalent*/
+#else
   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 #endif
-  return ch;
+  
+/*  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~( ICANON | ECHO );
+  newt.c_iflag &= ~(IGNBRK | BRKINT ); /* Return NULL on Ctrl+C */
+/*  newt.c_iflag &= ~(IGNBRK  );
+  newt.c_iflag |=  (BRKINT ); /* Return SIGINT on Ctrl+C */
+  /*switch (qdgetchmode)
+  {
+    case 0:
+      newt.c_cc[VMIN] = oldt.c_cc[VMIN];
+      newt.c_cc[VTIME] = oldt.c_cc[VTIME];
+      tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+      ch = getchar();
+    break;
+    
+    case 1:
+      newt.c_cc[VMIN] = 0;
+      newt.c_cc[VTIME] = 1;
+      tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+      do
+      {
+        ch = getchar();
+      } while (ch==0 && exitreadqdline==0);
+    break;
+  }
+  /*tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  ch = getchar();*/
+  /*tcsetattr(STDIN_FILENO, TCSANOW, &oldt);*/
+  
+  if (ch) return ch;
+  return 3;
 }
 
 
@@ -339,6 +397,13 @@ int getkeyn()
   while ((ch=qdgetch()) == EOF)
   {
     /* Do Nuttin' */
+    
+    /* Except... */
+    if (exitreadqdline != 0)
+    {
+      ch=3;
+      break;
+    }
   }
   if (ch != EOF )
    {
@@ -4535,6 +4600,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
   if (eofiscancel == 0)
   {
     if (regsiginthandler()==-1) return -1;
+    qdgetchmode = 1;
   }
   
   while (exitreadqdline == 0)
@@ -4732,6 +4798,19 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
        }
      break;
             
+     case 3:
+       /* ^C = Cancel Mode */
+       if (eofiscancel == 0)
+       {
+         tlpos=0;
+         memset(theline,0,256);
+         strcpy(theline,"\x03\x00"); /* Old way of signalling cancellation */
+         retcond = 3;
+         goto ReturnPt;
+       }
+       /* Otherwise ignore it! */
+     break;
+            
      default:
        if ((tlpos < 255) && (ch<256) && (ch >= 32))
        {
@@ -4745,9 +4824,12 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
   }
   retcond = 3;
 ReturnPt:
+  exitreadqdline = 0;
+  qdgetchmode = 0;
   strcpy(targetstring, theline);
   if (eofiscancel == 0) deregsiginthandler();
   else if (theline[0] == 4) return 4;
+  else if (theline[0] == 3) return 3;
   return retcond;
 }
 
@@ -4794,6 +4876,7 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
       free(itemplate);
       return -1;
     }
+    qdgetchmode = 1;
   }
   
   while (exitreadqdline == 0)
@@ -4991,6 +5074,18 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
        }
      break;
             
+     case 3:
+       /* ^C = Cancel Mode */
+       if (eofiscancel == 0)
+       {
+         tlpos=0;
+         memset(targetstring,0,stringlen);
+         strcpy(targetstring,"\x03\x00"); /* Old way of signalling cancellation */
+         goto ReturnPt;
+       }
+       /* Otherwise ignore it! */
+     break;
+            
      default:
        if ((tlpos < stringlen-1) && (ch<256) && (ch >= 32))
        {
@@ -5005,8 +5100,11 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
   retcond = 3;
 ReturnPt:
   free(itemplate);
+  qdgetchmode = 0;
+  exitreadqdline = 0;
   if (eofiscancel == 0) deregsiginthandler();
   else if (targetstring[0] == 4) return 4;
+  else if (targetstring[0] == 3) return 3;
   return retcond;
 }
 
