@@ -154,6 +154,9 @@
 #define OK_UNK_7 -7
 #define OK_UNK_8 -8
 
+#ifndef STDOUT_FD
+#define STDOUT_FD 1
+#endif
 
 #define clearstring(astring, aslength) memset(astring, 0, aslength)
 #define termbs() termbsn(1)
@@ -167,6 +170,7 @@ int getterm();
 int qdgetch();
 int regsiginthandler();
 int deregsiginthandler();
+int getansicursorpos(int *rows, int *cols);
 int termbsn(int n);
 int qdinstrch(char *targstring, char findchar, int startoffset);
 int firstletter(char *cmdstring);

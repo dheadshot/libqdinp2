@@ -173,15 +173,15 @@ OK_UNK_8 	-8		Unknown 8 Key Sequence
 
 
 #ifdef COHERENT
-char qdinplibver[] = "0.02.02C";
+char qdinplibver[] = "0.02.03C";
 #else
-char qdinplibver[] = "0.02.02";
+char qdinplibver[] = "0.02.03";
 #endif
 
 char termtype[256] = "";
 int modsasfuncs = 0; /* Interpret function key modifiers as additional function keys? */
 int exitreadqdline = 0; /* Exit the readqdline function? */
-int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll.  */
+int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate.  */
 
 char *qdinpver()
 {
@@ -263,6 +263,18 @@ int qdgetch()
       } while (ch==0 && exitreadqdline==0);
       if (ch==0 && exitreadqdline != 0) ch = 3;
     break;
+    
+    case 2:
+      newt.c_cc[VMIN] = 0;
+      newt.c_cc[VTIME] = 2;
+#ifdef COHERENT
+      ioctl(STDIN_FILENO, TCSETA, &newt); /*tcsetattr TCSANOW equivalent*/
+#else
+      tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+#endif
+      ch = getchar();
+      if (ch==0 && exitreadqdline != 0) ch = 3;
+    break;
   }
 #ifdef COHERENT
   ioclt(STDIN_FILENO, TCSETA, &oldt); /*tcsetattr TCSANOW equivalent*/
@@ -325,11 +337,39 @@ int deregsiginthandler()
 }
 
 
+int getansicursorpos(int *rows, int *cols)
+{
+  if (!rows || !cols) return 0;
+  char buffer[256] = "";
+  int i=0, qdgm = qdgetchmode;
+  if (write(STDOUT_FD, "\033[6n", 4) != 4) return 0;
+  qdgetchmode = 2;
+  for (i=0; i<255; i++)
+  {
+    buffer[i] = qdgetch();
+    if (buffer[i] < 10) break;
+    if (buffer[i] == 'R') break;
+  }
+  buffer[i] = 0;
+  qdgetchmode = qdgm;
+  
+  if (buffer[0] != '\033' || buffer[1] != '[') return 0;
+  if (sscanf(buffer+(2*sizeof(char)), "%d;%d", rows, cols) != 2) return 0;
+  return 1;
+}
+
+
 int termbsn(int n)
 {
   /* Backspaces on screen a given number of times
      Returns the amount backspaced. */
   int i;
+  int cpw = 0, cpx = 0, cpy;
+  
+  if ((strcmp(termtype,"vt52")!=0) && (strcmp(termtype,"VT52")!=0) && (strcmp(termtype,"Tektronix 4014")!=0) && (strcmp(termtype,"T4014")!=0))
+  {
+    if (getansiicursorpos(&cpy,&cpx) == 1) cpw = 1; /* Get Cursor Position, or fail */
+  }
   for (i = 0; i < n; i++)
   {
     if ((strcmp(termtype,"vt52")==0) || (strcmp(termtype,"VT52")==0))
@@ -342,7 +382,17 @@ int termbsn(int n)
     }
     else
     {
-      printf("\033[1D \033[1D");
+      if (cpw && cpx <= 1)
+      {
+        /* Multiline backspace */
+        printf("\033[%d;9999H \033[%d,9999H",cpy-1, cpy-1);
+        if (!getansiicursorpos(&cpy,&cpx)) cpw = 0; /* Get Cursor Position, or fail */
+      }
+      else
+      {
+        printf("\033[1D \033[1D");
+        if (cpw) cpx--;
+      }
     }
   }
   return i;
