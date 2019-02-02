@@ -368,7 +368,7 @@ int termbsn(int n)
   
   if ((strcmp(termtype,"vt52")!=0) && (strcmp(termtype,"VT52")!=0) && (strcmp(termtype,"Tektronix 4014")!=0) && (strcmp(termtype,"T4014")!=0))
   {
-    if (getansiicursorpos(&cpy,&cpx) == 1) cpw = 1; /* Get Cursor Position, or fail */
+    if (getansicursorpos(&cpy,&cpx) == 1) cpw = 1; /* Get Cursor Position, or fail */
   }
   for (i = 0; i < n; i++)
   {
@@ -386,7 +386,7 @@ int termbsn(int n)
       {
         /* Multiline backspace */
         printf("\033[%d;9999H \033[%d,9999H",cpy-1, cpy-1);
-        if (!getansiicursorpos(&cpy,&cpx)) cpw = 0; /* Get Cursor Position, or fail */
+        if (!getansicursorpos(&cpy,&cpx)) cpw = 0; /* Get Cursor Position, or fail */
       }
       else
       {
