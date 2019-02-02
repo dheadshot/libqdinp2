@@ -173,9 +173,9 @@ OK_UNK_8 	-8		Unknown 8 Key Sequence
 
 
 #ifdef COHERENT
-char qdinplibver[] = "0.02.03C";
+char qdinplibver[] = "0.02.04C";
 #else
-char qdinplibver[] = "0.02.03";
+char qdinplibver[] = "0.02.04";
 #endif
 
 char termtype[256] = "";
