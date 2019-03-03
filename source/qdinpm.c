@@ -172,12 +172,11 @@ OK_UNK_8 	-8		Unknown 8 Key Sequence
 */
 
 
+char qdinplibver[] = "0.02.05"
 #ifdef COHERENT
-char qdinplibver[] = "0.02.04C";
-#else
-char qdinplibver[] = "0.02.04";
+"C"
 #endif
-
+;
 char termtype[256] = "";
 int modsasfuncs = 0; /* Interpret function key modifiers as additional function keys? */
 int exitreadqdline = 0; /* Exit the readqdline function? */
@@ -342,7 +341,9 @@ int getansicursorpos(int *rows, int *cols)
   if (!rows || !cols) return 0;
   char buffer[256] = "";
   int i=0, qdgm = qdgetchmode;
-  if (write(STDOUT_FD, "\033[6n", 4) != 4) return 0;
+  if (write(STDOUT_FILENO, "\033[6n", 4) != 4) return 0;
+  fsync(STDOUT_FILENO);
+  fsync(STDIN_FILENO);
   qdgetchmode = 2;
   for (i=0; i<255; i++)
   {
