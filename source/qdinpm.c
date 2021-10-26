@@ -172,7 +172,7 @@ OK_UNK_8 	-8		Unknown 8 Key Sequence
 */
 
 
-char qdinplibver[] = "0.02.05"
+char qdinplibver[] = "0.02.06"
 #ifdef COHERENT
 "C"
 #endif
@@ -180,7 +180,7 @@ char qdinplibver[] = "0.02.05"
 char termtype[256] = "";
 int modsasfuncs = 0; /* Interpret function key modifiers as additional function keys? */
 int exitreadqdline = 0; /* Exit the readqdline function? */
-int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate.  */
+int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate, Mode 3 = Block but ignore Breaks and Core dumps.  */
 
 char *qdinpver()
 {
@@ -232,7 +232,9 @@ int qdgetch()
   newt = oldt;
   newt.c_lflag &= ~( ICANON | ECHO );
 /*  newt.c_iflag &= ~(IGNBRK | BRKINT ); /* Return NULL on Ctrl+C */
-  newt.c_iflag &= ~(IGNBRK  );
+#ifndef COHERENT
+  newt.c_iflag &= ~(IGNBRK  ); /* According to manpage at http://www.nesssoftware.com/home/mwc/manpage.php?page=termio, this probably won't work with Coherent. */
+#endif
   newt.c_iflag |=  (BRKINT ); /* Return SIGINT on Ctrl+C */
   switch (qdgetchmode)
   {
@@ -274,6 +276,20 @@ int qdgetch()
       ch = getchar();
       if (ch==0 && exitreadqdline != 0) ch = 3;
     break;
+
+    case 3:
+      newt.c_cc[VMIN] = oldt.c_cc[VMIN];
+      newt.c_cc[VTIME] = oldt.c_cc[VTIME];
+      newt.c_lflag &= ~(ISIG);
+      /*newt.c_iflag &= ~(IGNBRK | BRKINT ); /* Return NULL on Ctrl+C */
+#ifdef COHERENT
+      ioctl(STDIN_FILENO, TCSETA, &newt); /*tcsetattr TCSANOW equivalent*/
+#else
+      tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+#endif
+      ch = getchar();
+      if (ch==3) exitreadqdline = 1;
+    break;
   }
 #ifdef COHERENT
   ioclt(STDIN_FILENO, TCSETA, &oldt); /*tcsetattr TCSANOW equivalent*/
@@ -309,6 +325,8 @@ int qdgetch()
   /*tcsetattr(STDIN_FILENO, TCSANOW, &newt);
   ch = getchar();*/
   /*tcsetattr(STDIN_FILENO, TCSANOW, &oldt);*/
+  
+  if (qdgetchmode==3 && ch==26) raise(SIGTSTP);
   
   if (ch) return ch;
   return 3;
@@ -4651,7 +4669,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
   if (eofiscancel == 0)
   {
     if (regsiginthandler()==-1) return -1;
-    qdgetchmode = 1;
+    qdgetchmode = 3;
   }
   
   while (exitreadqdline == 0)
