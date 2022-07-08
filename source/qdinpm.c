@@ -172,7 +172,7 @@ OK_UNK_8 	-8		Unknown 8 Key Sequence
 */
 
 
-char qdinplibver[] = "0.02.06"
+char qdinplibver[] = "0.02.07"
 #ifdef COHERENT
 "C"
 #endif
