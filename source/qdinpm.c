@@ -4861,7 +4861,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
        else
        {
          printf("\033[7mD\033[27m");
-         theline[tlpos]=12;
+         theline[tlpos]=4;
          tlpos++;
          if ((itpos < 255) && (insmode == 0)) itpos++;
        }
@@ -5137,7 +5137,7 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
        else
        {
          printf("\033[7mD\033[27m");
-         targetstring[tlpos]=12;
+         targetstring[tlpos]=4;
          tlpos++;
          if ((itpos < stringlen-1) && (insmode == 0)) itpos++;
        }
