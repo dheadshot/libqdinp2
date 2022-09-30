@@ -1,6 +1,51 @@
 #ifndef __INC_QDINPM_H__
 #define __INC_QDINPM_H__ 1
 
+#ifdef WIN32
+#ifndef WINDOWS
+#define WINDOWS
+#endif
+#endif
+#ifdef WIN64
+#ifndef WINDOWS
+#define WINDOWS
+#endif
+#endif
+
+#ifdef WINDOWS
+#include <Windows.h>
+#endif
+
+#ifdef WINDOWS
+#define OK_CRETURN 13      /* CR */
+#define OK_SPACE 32        /* Space Bar */
+#define OK_HASH 35         /* Hash sign */
+#define OK_APOSTROPHE 39   /* Apostrophe or single quote */
+#define OK_PLUS 43         /* Plus sign */
+#define OK_COMMA 44        /* Comma */
+#define OK_MINUS 45        /* Minus sign */
+#define OK_FSTOP 46        /* Full stop */
+#define OK_FSLASH 47       /* Forward Slash */
+#define OK_0 48
+#define OK_1 49
+#define OK_2 50
+#define OK_3 51
+#define OK_4 52
+#define OK_5 53
+#define OK_6 54
+#define OK_7 55
+#define OK_8 56
+#define OK_9 57
+#define OK_COLON 58
+#define OK_SEMICOLON 59
+
+/* Capital letters = 65-90 */
+#define OK_OPENSQBRACKET 91 /* Open square bracket */
+#define OK_BACKSLASH 92    /* Backslash */
+#define OK_CLOSESQBRACKET 93 /* Close square bracket */
+#define OK_GRAVE 96        /* ` = Grave symbol */
+#endif
+
 #define OK_ESC 256+0
 #define OK_F0 256+1
 #define OK_F1 256+2
@@ -139,11 +184,145 @@
 #define OK_ST 256+140
 #define OK_PM 256+141
 
+#ifdef WINDOWS
+#define OK_MLB 256+160 /* Left Mouse Button */
+#define OK_MRB 256+161 /* Right Mouse Button */
+#define OK_MMB 256+162 /* Middle Mouse Button */
+#define OK_MX1B 256+163 /* X1 Mouse Button */
+#define OK_MX2B 256+164 /* X2 Mouse Button */
+#define OK_KANA 256+165 /* Kana key */
+#define OK_HANGUL 256+166 /* Hangul Key */
+#define OK_JUNJA 256+167 /* Junja key */
+#define OK_FINAL 256+168 /* IME Final key */
+#define OK_HANJA 256+169 /* Hanja Key */
+#define OK_KANJI 256+170 /* Kanji Key */
+#define OK_CONVERT 256+171 /* IME Convert Key */
+#define OK_NONCONVERT 256+172 /* IME Non-Convert Key */
+#define OK_ACCEPT 256+173 /* IME Accept Key */
+#define OK_MODECHANGERQ 256+174 /* IME Mode Change Request Key */
+#define OK_PRINT 256+175 /* Print Key */
+#define OK_EXECUTE 256+176 /* Execute Key */
+#define OK_SLEEP 256+177 /* Sleep key */
+#define OK_SEPARATOR 256+178 /* Numpad Separator key */
+#define OK_LSHIFT 256+179 /* Left Shift Key, 0x1B3 */
+#define OK_RSHIFT 256+180 /* Right shift key, 0x1B4 */
+#define OK_APPS 256+181 /* Applications key */
+#define OK_LMENU 256+182 /* Left Menu Key */
+#define OK_RMENU 256+183 /* Right Menu Key */
+#define OK_BROWSERBACK 256+184 /* Browser Back key */
+#define OK_BROWSERFWD 256+185 /* Browser Forward key */
+#define OK_BROWSERREF 256+186 /* Browser Refresh key */
+#define OK_BROWSERSTOP 256+187 /* Browser Stop key */
+#define OK_BROWSERSEARCH 256+188 /* Browser Search key */
+#define OK_BROWSERFAV 256+189 /* Browser Favourites key */
+#define OK_BROWSERHOME 256+190 /* Browser Home key */
+#define OK_VOLMUTE 256+191 /* Volume Mute Key */
+#define OK_VOLDOWN 256+192 /* Volume Down Key */
+#define OK_VOLUP 256+193 /* Volume Up Key */
+#define OK_MEDIANEXT 256+194 /* Media Next Track key */
+#define OK_MEDIAPREV 256+195 /* Media Previous Track key */
+#define OK_MEDIASTOP 256+196 /* Media Stop key */
+#define OK_MEDIAPLAY 256+197 /* Media Play/Pause key */
+#define OK_STARTMAIL 256+198 /* Start email key */
+#define OK_STARTMEDIA 256+199 /* Start media player key */
+#define OK_STARTAPP1 256+200 /* Start Application 1 key */
+#define OK_STARTAPP2 256+201 /* Start Application 2 key */
+#define OK_OEM8 256+202 /* OEM key varies by country */
+#define OK_PROCESSKEY 256+203 /* IME Process Key */
+#define OK_ATTENTION 256+204 /* Attention Key */
+#define OK_CRSEL 256+205 /* CrSel Key */
+#define OK_EXSEL 256+206 /* ExSel Key */
+#define OK_ERASEEOF 256+207 /* Erase EOF key */
+#define OK_PLAY 256+208 /* Play Key */
+#define OK_ZOOM 256+209 /* Zoom key */
+#define OK_PA1 256+210 /* PA1 key */
+#define OK_OEMCLEAR 256+211 /* OEM Clear key */
+#define OK_NONAME 256+212 /* Reserved */
+#define OK_PACKET 256+213 /* Miscellaneous keys */
+#endif
+
 #define OK_NOMODMAX 511
-#define OK_SHIFT 512
-#define OK_CTRL 1024
-#define OK_ALT 2048
-#define OK_META 4096
+#define OK_SHIFT 512        /* Any Shift modifier, 0x0200 */
+#define OK_CTRL 1024        /* Any Ctrl modifier in *nix, Left Ctrl in Windows, 0x0400 */
+#define OK_ALT 2048         /* Any Alt modifier, 0x0800 */
+#define OK_META 4096        /* Any Meta modifier in *nix, Enhanced Key in Windows, 0x1000 */
+
+#ifdef WINDOWS
+#define OK_LWIN 8192        /* Left Windows key, 0x2000 */
+#define OK_RWIN 16384       /* Right Windows key, 0x4000 */
+#define OK_AMENU 32768      /* Menu key, 0x8000 */
+#define OK_ALTGR 65536      /* Alt Gr key, 0x010000 */
+#define OK_RCTRL 131072     /* Right Ctrl key, 0x020000 */
+#define OK_NLOCKON   262144 /* Numlock is on, 0x040000 */
+#define OK_CLOCKON   524288 /* Caps Lock is on, 0x080000 */
+#define OK_SLOCKON  1048576 /* Scroll lock is on, 0x100000 */
+
+#define OK_CANCEL ((OK_CTRL) | (OK_PAUSE)) /* Ctrl+Break */
+#define OK_HANGUEL OK_HANGUL
+
+/* English language layouts */
+#define OK_OEM1 OK_SEMICOLON
+#define OK_OEM2 OK_FSLASH
+#define OK_OEM3 OK_GRAVE
+#define OK_OEM4 OK_OPENSQBRACKET
+#ifdef __UK__
+#define OK_OEM5 OK_HASH
+#else
+#define OK_OEM5 OK_BACKSLASH
+#endif
+#define OK_OEM6 OK_CLOSESQBRACKET
+#define OK_OEM7 OK_APOSTROPHE
+#define OK_OEM102 OK_BACKSLASH
+#define OK_ADD OK_PLUS
+#define OK_SUB OK_MINUS
+#define OK_OEMPLUS OK_PLUS
+#define OK_OEMCOMMA OK_COMMA
+#define OK_OEMMINUS OK_MINUS
+#define OK_PERIOD OK_FSTOP
+#define OK_OEMPERIOD OK_FSTOP
+#endif
+
+#define OK_ALLMODS ~(OK_NOMODMAX)
+
+#ifndef WINDOWS
+#ifdef OTHER_OS
+#define OK_LETTERMODIFIERS ((OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_CLOCKON))
+#else
+#define OK_LETTERMODIFIERS ((OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT))
+#endif
+#else
+#define OK_LETTERMODIFIERS ((OK_SHIFT) | (OK_CTRL) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_CLOCKON))
+#endif
+
+#ifdef WINDOWS
+#define OK_LETTERINFOS ((OK_LETTERMODIFIERS) | (OK_NOMODMAX))
+#define OK_CAPSSHIFTS ((OK_SHIFT) | (OK_CLOCKON))
+#define OK_LETTERCMDMODIFIERS ((OK_LETTERMODIFIERS) & ~OK_CAPSSHIFTS & ~(OK_ALTGR))
+#define OK_LETTERCMDMODIFIERINFOS (OK_LETTERCMDMODIFIERS | OK_NOMODMAX)
+#define OK_SYMBOLCMDMODIFIERS ((OK_LETTERMODIFIERS) & ~(OK_SHIFT) & ~(OK_ALTGR))
+#define OK_CTRLS ((OK_CTRL) | (OK_RCTRL))
+#define OK_LETTERCMDNOCTRLMODIFIERS ((OK_LETTERCMDMODIFIERS) & ~OK_CTRLS)
+#define OK_LETTERINFOSNOCTRLS (OK_LETTERINFOS & ~(OK_CTRLS))
+#define OK_LETTERCMDMODIFIERINFOSNOCTRLS (OK_LETTERCMDMODIFIERINFOS & ~(OK_CTRLS))
+#define OK_LETTERCMDMODIFIERINFOSNOCTRLSNOMETA (OK_LETTERCMDMODIFIERINFOSNOCTRLS & ~(OK_META))
+#endif
+
+#ifndef WINDOWS
+#ifdef OTHER_OS
+#define OK_NUMPADMODIFIERS (OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_NLOCKON)
+#else
+#define OK_NUMPADMODIFIERS (OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT)
+#endif
+#else
+#define OK_NUMPADMODIFIERS (OK_SHIFT) | (OK_CTRL) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_NLOCKON)
+#endif
+
+#ifdef WINDOWS
+#define OK_NUMPADSHIFTS ((OK_SHIFT) | (OK_NLOCKON))
+#define OK_NUMPADCMDMODIFIERS ((OK_LETTERMODIFIERS) & ~OK_NUMPADSHIFTS)
+#define OK_LOCKS ((OK_CLOCKON) | (OK_NLOCKON) | (OK_SLOCKON))
+#define OK_NOLOCKS ~OK_LOCKS
+#endif
 
 #define OK_UNK_1 -1
 #define OK_UNK_2 -2
@@ -158,20 +337,50 @@
 #define STDOUT_FD 1
 #endif
 
+
+#ifdef WINDOWS
+#define CURCOL_BLUE 1
+#define CURCOL_GREEN 2
+#define CURCOL_RED 4
+#define CURCOL_BRIGHT 8
+#endif
+
+#define gotoxy(x,y) gotoansixy(x+1,y+1)
 #define clearstring(astring, aslength) memset(astring, 0, aslength)
 #define termbs() termbsn(1)
 /* For compatibility with the original library, define a macro for 
    readline() as readqdline() */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 char *qdinpver();
 void setmodsasfuncs();
 void resetmodsasfuncs();
 int getterm();
+#ifdef WINDOWS
+void SetCursorState(int CSize, BOOL Visible);
+void SetCursorPos_(int x, int y);
+void SetTextColour(int fg, int bg, int inverse);
+int GetFgTextColour();
+int GetBgTextColour();
+int GetWinSize(int *width, int *height);
+int GetCursorPos_(int *x, int *y);
+WORD GetCursorAttribs();
+void setcvars();
+int keytranslate(WORD vkey, DWORD modkey, TCHAR keychar);
+BOOL GetKeynWin(int *keyn, int *repeat);
+#endif
+void cls();
 int qdgetch();
 int regsiginthandler();
 int deregsiginthandler();
+void gotoansixy(int x, int y);
 int getansicursorpos(int *rows, int *cols);
 int termbsn(int n);
+void writechar(char c);
+void writestr(char *str);
 int qdinstrch(char *targstring, char findchar, int startoffset);
 int firstletter(char *cmdstring);
 int getkeyn();
@@ -179,6 +388,13 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel);
 int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int eofiscancel);
 int keypause();
 int yesnomsg(char *amsg);
+int NEWyesnomsg( char *amsg, int eofiscancel);
+void DoNothing();
+int GiveOne();
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif
