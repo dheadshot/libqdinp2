@@ -1,5 +1,6 @@
 @echo off
 set FULLLIB=0
+set REBUILD_ALL=0
 if "%1"=="clean" goto clean
 if "%1"=="tmp/qdinpm.o" goto qdinpm
 if "%1"=="tmp\qdinpm.o" goto qdinpm
@@ -10,14 +11,19 @@ if "%1"=="libqdinp2.a" goto libqdinp2
 if "%1"=="" goto default
 if "%1"=="all" goto default
 if "%1"=="/?" goto help
+if "%1"=="remake" goto remake
 
 :help
 echo Use "%0 clean" to clean, otherwise use "%0 TargetFile CommandEnvironment" to make that target.
 goto end
 
+:remake
+set REBUILD_ALL=1
+
 :clean
 del tmp\qdinpm.o
-goto end
+if NOT "%REBUILD_ALL%"=="1" goto end
+goto default
 
 :noenv
 echo Error: specify a command environment in the second variable!
