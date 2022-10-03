@@ -3,6 +3,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+
+#include "qdinpm.h"
+
 #ifdef COHERENT /* For compatibility with Coherent and other older *NIXes, define COHERENT! */
 #include <termio.h>
 #elifndef WINDOWS
@@ -17,174 +20,170 @@
 #include <winuser.h>
 #endif
 
-#include "qdinpm.h"
-
-#ifdef WINDOWS
 /* Redefs for older WinCons */
-#ifndef VK_XBUTTON1
+#if defined (WINDOWS) && (! defined (VK_XBUTTON1) )
 #define VK_XBUTTON1 0x05
 #endif
-#ifndef VK_XBUTTON2
+#if defined (WINDOWS) && (! defined ( VK_XBUTTON2 ) )
 #define VK_XBUTTON2 0x06
 #endif
-#ifndef VK_HANGUL
+#if defined (WINDOWS) && (! defined ( VK_HANGUL ) )
 #define VK_HANGUL 0x15
 #endif
-#ifndef VK_JUNJA
+#if defined (WINDOWS) && (! defined ( VK_JUNJA ) )
 #define VK_JUNJA 0x17
 #endif
-#ifndef VK_FINAL
+#if defined (WINDOWS) && (! defined ( VK_FINAL ) )
 #define VK_FINAL 0x18
 #endif
-#ifndef VK_HANJA
+#if defined (WINDOWS) && (! defined ( VK_HANJA ) )
 #define VK_HANJA 0x19
 #endif
-#ifndef VK_KANJI
+#if defined (WINDOWS) && (! defined ( VK_KANJI ) )
 #define VK_KANJI 0x19
 #endif
-#ifndef VK_CONVERT
+#if defined (WINDOWS) && (! defined ( VK_CONVERT ) )
 #define VK_CONVERT 0x1C
 #endif
-#ifndef VK_NONCONVERT
+#if defined (WINDOWS) && (! defined ( VK_NONCONVERT ) )
 #define VK_NONCONVERT 0x1D
 #endif
-#ifndef VK_ACCEPT
+#if defined (WINDOWS) && (! defined ( VK_ACCEPT ) )
 #define VK_ACCEPT 0x1E
 #endif
-#ifndef VK_MODECHANGE
+#if defined (WINDOWS) && (! defined ( VK_MODECHANGE ) )
 #define VK_MODECHANGE 0x1F
 #endif
-#ifndef VK_SLEEP
+#if defined (WINDOWS) && (! defined ( VK_SLEEP ) )
 #define VK_SLEEP 0x5F
 #endif
-#ifndef VK_BROWSER_BACK
+#if defined (WINDOWS) && (! defined ( VK_BROWSER_BACK ) )
 #define VK_BROWSER_BACK 0xA6
 #endif
-#ifndef VK_BROWSER_FORWARD
+#if defined (WINDOWS) && (! defined ( VK_BROWSER_FORWARD ) )
 #define VK_BROWSER_FORWARD 0xA7
 #endif
-#ifndef VK_BROWSER_REFRESH
+#if defined (WINDOWS) && (! defined ( VK_BROWSER_REFRESH ) )
 #define VK_BROWSER_REFRESH 0xA8
 #endif
-#ifndef VK_BROWSER_STOP
+#if defined (WINDOWS) && (! defined ( VK_BROWSER_STOP ) )
 #define VK_BROWSER_STOP 0xA9
 #endif
-#ifndef VK_BROWSER_SEARCH
+#if defined (WINDOWS) && (! defined ( VK_BROWSER_SEARCH ) )
 #define VK_BROWSER_SEARCH 0xAA
 #endif
-#ifndef VK_BROWSER_FAVORITES
+#if defined (WINDOWS) && (! defined ( VK_BROWSER_FAVORITES ) )
 #define VK_BROWSER_FAVORITES 0xAB
 #endif
-#ifndef VK_BROWSER_HOME
+#if defined (WINDOWS) && (! defined ( VK_BROWSER_HOME ) )
 #define VK_BROWSER_HOME 0xAC
 #endif
-#ifndef VK_VOLUME_MUTE
+#if defined (WINDOWS) && (! defined ( VK_VOLUME_MUTE ) )
 #define VK_VOLUME_MUTE 0xAD
 #endif
-#ifndef VK_VOLUME_DOWN
+#if defined (WINDOWS) && (! defined ( VK_VOLUME_DOWN ) )
 #define VK_VOLUME_DOWN 0xAE
 #endif
-#ifndef VK_VOLUME_UP
+#if defined (WINDOWS) && (! defined ( VK_VOLUME_UP ) )
 #define VK_VOLUME_UP 0xAF
 #endif
-#ifndef VK_MEDIA_NEXT_TRACK
+#if defined (WINDOWS) && (! defined ( VK_MEDIA_NEXT_TRACK ) )
 #define VK_MEDIA_NEXT_TRACK 0xB0
 #endif
-#ifndef VK_MEDIA_PREV_TRACK
+#if defined (WINDOWS) && (! defined ( VK_MEDIA_PREV_TRACK ) )
 #define VK_MEDIA_PREV_TRACK 0xB1
 #endif
-#ifndef VK_MEDIA_STOP
+#if defined (WINDOWS) && (! defined ( VK_MEDIA_STOP ) )
 #define VK_MEDIA_STOP 0xB2
 #endif
-#ifndef VK_MEDIA_PLAY_PAUSE
+#if defined (WINDOWS) && (! defined ( VK_MEDIA_PLAY_PAUSE ) )
 #define VK_MEDIA_PLAY_PAUSE 0xB3
 #endif
-#ifndef VK_LAUNCH_MAIL
+#if defined (WINDOWS) && (! defined ( VK_LAUNCH_MAIL ) )
 #define VK_LAUNCH_MAIL 0xB4
 #endif
-#ifndef VK_LAUNCH_MEDIA_SELECT
+#if defined (WINDOWS) && (! defined ( VK_LAUNCH_MEDIA_SELECT ) )
 #define VK_LAUNCH_MEDIA_SELECT 0xB5
 #endif
-#ifndef VK_LAUNCH_APP1
+#if defined (WINDOWS) && (! defined ( VK_LAUNCH_APP1 ) )
 #define VK_LAUNCH_APP1 0xB6
 #endif
-#ifndef VK_LAUNCH_APP2
+#if defined (WINDOWS) && (! defined ( VK_LAUNCH_APP2 ) )
 #define VK_LAUNCH_APP2 0xB7
 #endif
-#ifndef VK_OEM_1
+#if defined (WINDOWS) && (! defined ( VK_OEM_1 ) )
 #define VK_OEM_1 0xBA
 #endif
-#ifndef VK_OEM_PLUS
+#if defined (WINDOWS) && (! defined ( VK_OEM_PLUS ) )
 #define VK_OEM_PLUS 0xBB
 #endif
-#ifndef VK_OEM_COMMA
+#if defined (WINDOWS) && (! defined ( VK_OEM_COMMA ) )
 #define VK_OEM_COMMA 0xBC
 #endif
-#ifndef VK_OEM_MINUS
+#if defined (WINDOWS) && (! defined ( VK_OEM_MINUS ) )
 #define VK_OEM_MINUS 0xBD
 #endif
-#ifndef VK_OEM_PERIOD
+#if defined (WINDOWS) && (! defined ( VK_OEM_PERIOD ) )
 #define VK_OEM_PERIOD 0xBE
 #endif
-#ifndef VK_OEM_2
+#if defined (WINDOWS) && (! defined ( VK_OEM_2 ) )
 #define VK_OEM_2 0xBF
 #endif
-#ifndef VK_OEM_3
+#if defined (WINDOWS) && (! defined ( VK_OEM_3 ) )
 #define VK_OEM_3 0xC0
 #endif
-#ifndef VK_OEM_4
+#if defined (WINDOWS) && (! defined ( VK_OEM_4 ) )
 #define VK_OEM_4 0xDB
 #endif
-#ifndef VK_OEM_5
+#if defined (WINDOWS) && (! defined ( VK_OEM_5 ) )
 #define VK_OEM_5 0xDC
 #endif
-#ifndef VK_OEM_6
+#if defined (WINDOWS) && (! defined ( VK_OEM_6 ) )
 #define VK_OEM_6 0xDD
 #endif
-#ifndef VK_OEM_7
+#if defined (WINDOWS) && (! defined ( VK_OEM_7 ) )
 #define VK_OEM_7 0xDE
 #endif
-#ifndef VK_OEM_8
+#if defined (WINDOWS) && (! defined ( VK_OEM_8 ) )
 #define VK_OEM_8 0xDF
 #endif
-#ifndef VK_OEM_102
+#if defined (WINDOWS) && (! defined ( VK_OEM_102 ) )
 #define VK_OEM_102 0xE2
 #endif
-#ifndef VK_PROCESSKEY
+#if defined (WINDOWS) && (! defined ( VK_PROCESSKEY ) )
 #define VK_PROCESSKEY 0xE5
 #endif
-#ifndef VK_PACKET
+#if defined (WINDOWS) && (! defined ( VK_PACKET ) )
 #define VK_PACKET 0xE7
 #endif
-#ifndef VK_ATTN
+#if defined (WINDOWS) && (! defined ( VK_ATTN ) )
 #define VK_ATTN 0xF6
 #endif
-#ifndef VK_CRSEL
+#if defined (WINDOWS) && (! defined ( VK_CRSEL ) )
 #define VK_CRSEL 0xF7
 #endif
-#ifndef VK_EXSEL
+#if defined (WINDOWS) && (! defined ( VK_EXSEL ) )
 #define VK_EXSEL 0xF8
 #endif
-#ifndef VK_EREOF
+#if defined (WINDOWS) && (! defined ( VK_EREOF ) )
 #define VK_EREOF 0xF9
 #endif
-#ifndef VK_PLAY
+#if defined (WINDOWS) && (! defined ( VK_PLAY ) )
 #define VK_PLAY 0xFA
 #endif
-#ifndef VK_ZOOM
+#if defined (WINDOWS) && (! defined ( VK_ZOOM ) )
 #define VK_ZOOM 0xFB
 #endif
-#ifndef VK_NONAME
+#if defined (WINDOWS) && (! defined ( VK_NONAME ) )
 #define VK_NONAME 0xFC
 #endif
-#ifndef VK_PA1
+#if defined (WINDOWS) && (! defined ( VK_PA1 ) )
 #define VK_PA1 0xFD
 #endif
-#ifndef VK_OEM_CLEAR
+#if defined (WINDOWS) && (! defined ( VK_OEM_CLEAR ) )
 #define VK_OEM_CLEAR 0xFE
 #endif
 
-#endif
 
 /*
 Key Formats:
@@ -406,7 +405,7 @@ int ok_array[] = { OK_MLB, OK_MRB, OK_CANCEL, OK_MMB, OK_MX1B, OK_MX2B, OK_BS,
 #endif
 
 
-char qdinplibver[] = "0.02.08"
+char qdinplibver[] = "0.02.09"
 #ifdef COHERENT
 "C"
 #endif
@@ -5393,6 +5392,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
   theline[255] = 0;
   memset(itemplate,0,256);
   strcpy(itemplate, templatestring);
+  if ((ch = qdinstrch(itemplate,10,0))>=0) itemplate[ch]=0;
   exitreadqdline = 0;
   if (eofiscancel == 0)
   {
@@ -5669,6 +5669,10 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
   targetstring[stringlen-1] = 0;
   memset(itemplate,0,stringlen);
   strcpy(itemplate, templatestring);
+#ifdef WINDOWS
+  if ((ch = qdinstrch(itemplate,13,0))>=0) itemplate[ch]=0;
+#endif
+  if ((ch = qdinstrch(itemplate,10,0))>=0) itemplate[ch]=0;
   exitreadqdline = 0;
   if (eofiscancel == 0)
   {
@@ -5966,17 +5970,22 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
      case 10:
        /* CRLF */
        if (tlpos < stringlen-1)
-        {
+       {
           printf("\n");
 #ifdef WINDOWS
           targetstring[tlpos]=(ch & 255);
+          if ((ch & 255)==OK_CRETURN)
+          {
+              if (tlpos < stringlen-1) tlpos++;
+              targetstring[tlpos]=10;
+          }
 #else
           targetstring[tlpos]=ch;
 #endif
           tlpos++;
           targetstring[tlpos]=0;
           goto ReturnPt;
-        }
+       }
      break;
      
      case 25:

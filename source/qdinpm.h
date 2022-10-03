@@ -1,22 +1,14 @@
 #ifndef __INC_QDINPM_H__
 #define __INC_QDINPM_H__ 1
 
-#ifdef WIN32
-#ifndef WINDOWS
+#if ( defined ( WIN32 ) || defined ( WIN64 ) ) && ( ! defined ( WINDOWS ) )
 #define WINDOWS
-#endif
-#endif
-#ifdef WIN64
-#ifndef WINDOWS
-#define WINDOWS
-#endif
 #endif
 
 #ifdef WINDOWS
 #include <Windows.h>
-#endif
 
-#ifdef WINDOWS
+
 #define OK_CRETURN 13      /* CR */
 #define OK_SPACE 32        /* Space Bar */
 #define OK_HASH 35         /* Hash sign */
@@ -284,12 +276,10 @@
 
 #define OK_ALLMODS ~(OK_NOMODMAX)
 
-#ifndef WINDOWS
-#ifdef OTHER_OS
+#if (! defined ( WINDOWS ) ) && defined ( OTHER_OS )
 #define OK_LETTERMODIFIERS ((OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_CLOCKON))
-#else
+#elif (! defined ( WINDOWS ) ) && ( ! defined ( OTHER_OS ) )
 #define OK_LETTERMODIFIERS ((OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT))
-#endif
 #else
 #define OK_LETTERMODIFIERS ((OK_SHIFT) | (OK_CTRL) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_CLOCKON))
 #endif
@@ -307,12 +297,10 @@
 #define OK_LETTERCMDMODIFIERINFOSNOCTRLSNOMETA (OK_LETTERCMDMODIFIERINFOSNOCTRLS & ~(OK_META))
 #endif
 
-#ifndef WINDOWS
-#ifdef OTHER_OS
+#if (! defined ( WINDOWS ) ) && defined ( OTHER_OS )
 #define OK_NUMPADMODIFIERS (OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_NLOCKON)
-#else
+#elif (! defined ( WINDOWS ) ) && ( ! defined ( OTHER_OS ) )
 #define OK_NUMPADMODIFIERS (OK_SHIFT) | (OK_CTRL) | (OK_META) | (OK_ALT)
-#endif
 #else
 #define OK_NUMPADMODIFIERS (OK_SHIFT) | (OK_CTRL) | (OK_ALT) | (OK_ALTGR) | (OK_LWIN) | (OK_RWIN) | (OK_AMENU) | (OK_RCTRL) | (OK_NLOCKON)
 #endif
