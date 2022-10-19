@@ -8,7 +8,7 @@
 
 #ifdef COHERENT /* For compatibility with Coherent and other older *NIXes, define COHERENT! */
 #include <termio.h>
-#elifndef WINDOWS
+#elif !defined(WINDOWS)
 #include <termios.h>
 #endif
 #ifndef WINDOWS
