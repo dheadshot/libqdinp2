@@ -405,7 +405,7 @@ int ok_array[] = { OK_MLB, OK_MRB, OK_CANCEL, OK_MMB, OK_MX1B, OK_MX2B, OK_BS,
 #endif
 
 
-char qdinplibver[] = "0.02.09"
+char qdinplibver[] = "0.02.10"
 #ifdef COHERENT
 "C"
 #endif
@@ -424,6 +424,8 @@ int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate, M
 int cx, cy, cxmax, cymax;
 BOOL breakhandlerset = FALSE;
 #endif
+char tabstack[TABSTACKSIZE];
+int tabstackptr=0;
 
 
 char *qdinpver()
@@ -1013,6 +1015,55 @@ int getansicursorpos(int *rows, int *cols)
   *rows = cy + 1;
   *cols = cx + 1;
   return 1;
+#endif
+}
+
+
+void pushtotabstack(char tabsnum)
+{
+    if (tabstackptr<TABSTACKSIZE)
+    {
+        tabstack[tabstackptr]=tabsnum;
+        tabstackptr++;
+    }
+}
+
+
+char popfromtabstack()
+{
+    if (tabstackptr>0)
+    {
+        tabstackptr--;
+        return tabstack[tabstackptr];
+    }
+    return 0;
+}
+
+void cleartabstack()
+{
+    tabstackptr=0;
+}
+
+int writetab()
+{
+#ifdef WINDOWS
+    setcvars();
+    int ocx,ocy,dcx,dcy;
+    ocx=cx;
+    ocy=cy;
+    printf("%c",9);
+    setcvars();
+    dcx=cx-ocx;
+    dcy=cy-ocy;
+    if (dcx<=0 && dcy==0) dcy++;
+    while (dcy>0)
+    {
+        dcx+=cxmax;
+        dcy--;
+    }
+    pushtotabstack((char) (dcx & 0xff));
+#else
+    printf("%c",9);
 #endif
 }
 
@@ -5514,7 +5565,18 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
        /* DEL (NumDEL = ESC On) */
        if (tlpos>0)
        {
+#ifdef WINDOWS
+         int bses;
+         if (theline[tlpos-1]==9)
+         {
+             bses = popfromtabstack();
+             if (!bses)bses=1;
+         }
+         else bses=1;
+         termbsn(bses);
+#else
          termbsn(1);
+#endif
          tlpos--;
          if ((theline[tlpos]==12) || (theline[tlpos]==4)) termbsn(1);
          theline[tlpos]=0;
@@ -5570,7 +5632,7 @@ int readqdline(char *targetstring, char *templatestring, int eofiscancel)
        /* Tabs */
        if (tlpos < 255)
        {
-         printf("%c",9);
+         writetab();
          if ((itpos < 255) && (insmode == 0)) itpos++;
          theline[tlpos]=9;
          tlpos++;
@@ -5624,6 +5686,7 @@ ReturnPt:
   exitreadqdline = 0;
   qdgetchmode = 0;
   strcpy(targetstring, theline);
+  cleartabstack();
   if (eofiscancel == 0) deregsiginthandler();
   else if (theline[0] == 4) return 4;
   else if (theline[0] == 3) return 3;
@@ -5911,7 +5974,18 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
 #endif
        if (tlpos>0)
        {
+#ifdef WINDOWS
+         int bses;
+         if (targetstring[tlpos-1]==9)
+         {
+             bses = popfromtabstack();
+             if (!bses)bses=1;
+         }
+         else bses=1;
+         termbsn(bses);
+#else
          termbsn(1);
+#endif
          tlpos--;
 #ifndef WINDOWS
          if ((targetstring[tlpos]==12) || (targetstring[tlpos]==4)) termbsn(1);
@@ -5969,19 +6043,18 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
 #endif
      case 10:
        /* CRLF */
+#if defined(WINDOWS) && defined(NOTRANSLATE)
+       if (tlpos < stringlen-2)
+#else
        if (tlpos < stringlen-1)
+#endif
        {
           printf("\n");
-#ifdef WINDOWS
-          targetstring[tlpos]=(ch & 255);
-          if ((ch & 255)==OK_CRETURN)
-          {
-              if (tlpos < stringlen-1) tlpos++;
-              targetstring[tlpos]=10;
-          }
-#else
-          targetstring[tlpos]=ch;
+#if defined(WINDOWS) && defined(NOTRANSLATE)
+          targetstring[tlpos]=13;
+          tlpos++;
 #endif
+          targetstring[tlpos]=10; /* Not sure if to keep linux-specific behaviour of having this be ch instead of 10? */
           tlpos++;
           targetstring[tlpos]=0;
           goto ReturnPt;
@@ -6000,7 +6073,7 @@ int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int e
        /* Tabs */
        if (tlpos < stringlen-1)
        {
-         printf("%c",9);
+         writetab();
          if ((itpos < stringlen-1) && (insmode == 0)) itpos++;
          targetstring[tlpos]=9;
          tlpos++;
@@ -6082,6 +6155,7 @@ ReturnPt:
   qdgetchmode = 0;
 #endif
   exitreadqdline = 0;
+  cleartabstack();
   if (eofiscancel == 0) deregsiginthandler();
   else if (targetstring[0] == 4) return 4;
   else if (targetstring[0] == 3) return 3;
