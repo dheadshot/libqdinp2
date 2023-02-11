@@ -333,6 +333,8 @@
 #define CURCOL_BRIGHT 8
 #endif
 
+#define TABSTACKSIZE 256
+
 #define gotoxy(x,y) gotoansixy(x+1,y+1)
 #define clearstring(astring, aslength) memset(astring, 0, aslength)
 #define termbs() termbsn(1)
@@ -366,6 +368,10 @@ int regsiginthandler();
 int deregsiginthandler();
 void gotoansixy(int x, int y);
 int getansicursorpos(int *rows, int *cols);
+void pushtotabstack(char tabsnum);
+char popfromtabstack();
+void cleartabstack();
+int writetab();
 int termbsn(int n);
 void writechar(char c);
 void writestr(char *str);
