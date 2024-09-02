@@ -419,7 +419,7 @@ char qdinplibver[] = "0.02.10"
 char termtype[256] = "";
 int modsasfuncs = 0; /* Interpret function key modifiers as additional function keys? */
 int exitreadqdline = 0; /* Exit the readqdline function? */
-int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate, Mode 3 = Block but ignore Breaks and Core dumps.  */
+int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate, Mode 4 = Block but ignore Breaks and Core dumps, Mode 4 = Mode 2 without xon/xoff enabled and with legacy terminal features disabled.  */
 #ifdef WINDOWS
 int cx, cy, cxmax, cymax;
 BOOL breakhandlerset = FALSE;
@@ -841,7 +841,7 @@ int qdgetch()
       ch = getchar();
       if (ch==0 && exitreadqdline != 0) ch = 3;
     break;
-
+    
     case 3:
       newt.c_cc[VMIN] = oldt.c_cc[VMIN];
       newt.c_cc[VTIME] = oldt.c_cc[VTIME];
@@ -854,6 +854,21 @@ int qdgetch()
 #endif
       ch = getchar();
       if (ch==3) exitreadqdline = 1;
+    break;
+    
+    case 4:
+      newt.c_cc[VMIN] = 0;
+      newt.c_cc[VTIME] = 2;
+      newt.c_iflag &= ~(INPCK | ISTRIP | IXON); /* Turn off Parity Checks, XON/XOFF and stripping of 8th bit (probably already off) */
+      newt.c_lflag &= ~(IEXTEN); /* Turn off literal quotes */
+      newt.c_cflag |= (CS8); /* Use 8bit Chars */
+#ifdef COHERENT
+      ioctl(STDIN_FILENO, TCSETA, &newt); /*tcsetattr TCSANOW equivalent*/
+#else
+      tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+#endif
+      ch = getchar();
+      if (ch==0 && exitreadqdline != 0) ch = 3;
     break;
   }
 #ifdef COHERENT
@@ -1090,7 +1105,7 @@ int termbsn(int n)
     }
     else if ((strcmp(termtype,"Tektronix 4014")==0) || (strcmp(termtype,"T4014")==0))
     {
-      printf("\008 \008");
+      printf("\x08 \x08");
     }
     else
     {
