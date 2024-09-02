@@ -405,7 +405,7 @@ int ok_array[] = { OK_MLB, OK_MRB, OK_CANCEL, OK_MMB, OK_MX1B, OK_MX2B, OK_BS,
 #endif
 
 
-char qdinplibver[] = "0.02.10"
+char qdinplibver[] = "0.02.11"
 #ifdef COHERENT
 "C"
 #endif
