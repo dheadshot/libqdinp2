@@ -57,6 +57,16 @@ There are some Windows-only functions that are largely for internal use but are 
 * `keytranslate`: Convert a Windows key-state into a Quick and Dirty Input Library key number.
 * `GetKeynWin`: Read a keypress from stdin.
 
+##### qdgetch Modes
+
+There are several modes that can be used with qdgetch:
+
+Mode 0. Block
+Mode 1. Poll
+Mode 2. Get Immediate (Has timeout)
+Mode 3. Signals Disabled
+Mode 4. Like 2. but with more stripping: cleans the bytes, doesn't allow XOn/XOff, disables outdated functionality
+
 
 #### The Quick and Dirty Input Library Template System:
 The library uses a "Template" system for input.  When using the library for the user to enter a command, the template is recommended to be the last command the user typed.  When using the library for a user to enter text, the template is recommended to be the original contents of the text.  As the user types, the current position in the template is advanced unless "Insert Mode" is on.
