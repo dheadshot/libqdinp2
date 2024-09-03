@@ -380,6 +380,7 @@ int firstletter(char *cmdstring);
 int getkeyn();
 int readqdline(char *targetstring, char *templatestring, int eofiscancel);
 int NEWreadqdline(char *targetstring, char *templatestring, int stringlen, int eofiscancel);
+void setqdgetchmode(int amode); /* Dangerous function, only use if you know what you're doing! */
 int keypause();
 int yesnomsg(char *amsg);
 int NEWyesnomsg( char *amsg, int eofiscancel);

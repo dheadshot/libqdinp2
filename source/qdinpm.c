@@ -405,7 +405,7 @@ int ok_array[] = { OK_MLB, OK_MRB, OK_CANCEL, OK_MMB, OK_MX1B, OK_MX2B, OK_BS,
 #endif
 
 
-char qdinplibver[] = "0.02.11"
+char qdinplibver[] = "0.02.12"
 #ifdef COHERENT
 "C"
 #endif
@@ -6180,6 +6180,15 @@ ReturnPt:
 
 
 
+void setqdgetchmode(int amode)
+{
+  /* Dangerous function, only use if you know what you're doing! */
+  qdgetchmode = amode;
+}
+
+
+
+
 int keypause()
 {
   int tempi=0;
@@ -6192,8 +6201,9 @@ int keypause()
   gotoxy(cx,cy-1);
 #else
   printf("\033[1A");
-  printf("                               \n");
-  printf("\033[1A");
+  /*printf("                               \n");
+  printf("\033[1A");*/
+  printf("\033[K");
 #endif
   return 0;
 }
