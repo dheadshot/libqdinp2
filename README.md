@@ -62,11 +62,11 @@ There are some Windows-only functions that are largely for internal use but are 
 
 There are several modes that can be used with qdgetch:
 
-Mode 0. Block (the default)
-Mode 1. Poll
-Mode 2. Get Immediate (Has timeout)
-Mode 3. Signals Disabled
-Mode 4. Like 2. but with more stripping: cleans the bytes, doesn't allow XOn/XOff, disables legacy terminal functionality
+* Mode 0.: Block (the default)
+* Mode 1.: Poll
+* Mode 2.: Get Immediate (Has timeout)
+* Mode 3.: Signals Disabled
+* Mode 4.: Like 2. but with more stripping: cleans the bytes, doesn't allow XOn/XOff, disables legacy terminal functionality
 
 
 #### The Quick and Dirty Input Library Template System:
