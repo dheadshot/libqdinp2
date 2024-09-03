@@ -419,7 +419,7 @@ char qdinplibver[] = "0.02.11"
 char termtype[256] = "";
 int modsasfuncs = 0; /* Interpret function key modifiers as additional function keys? */
 int exitreadqdline = 0; /* Exit the readqdline function? */
-int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate, Mode 4 = Block but ignore Breaks and Core dumps, Mode 4 = Mode 2 without xon/xoff enabled and with legacy terminal features disabled.  */
+int qdgetchmode = 0; /* Mode 0 = Block, Mode 1 = Poll, Mode 2 = Get Immediate, Mode 3 = Block but ignore Breaks and Core dumps, Mode 4 = Mode 2 without xon/xoff enabled and with legacy terminal features disabled.  */
 #ifdef WINDOWS
 int cx, cy, cxmax, cymax;
 BOOL breakhandlerset = FALSE;
